@@ -236,8 +236,8 @@
 
         var prefList = {
             "prefectures": [
-                { "code": 1, "alphabet": "hokkaido", "name": "北海道", "capital": [43.06417, 141.34694] },
-                { "code": 2, "alphabet": "aomori", "name": "青森県", "capital": [40.82444, 140.74] },
+                { "code": 1, "alphabet": "hokkaido", "name": "北海道", "capital": [43.06417,141.34694] },
+                { "code": 2, "alphabet": "aomori", "name": "青森県", "capital": [40.82444,140.74] },
                 { "code": 3, "alphabet": "iwate", "name": "岩手県", "capital": [39.70361,141.1525] },
                 { "code": 4, "alphabet": "miyagi", "name": "宮城県", "capital": [38.26889,140.87194] },
                 { "code": 5, "alphabet": "akita", "name": "秋田県", "capital": [39.71861,140.1025] },
@@ -316,11 +316,14 @@
 
             console.log( prefFile );
 
+            // Loading
             _this.classList.add('is-loading');
-
             var loading = document.createElement('div');
             loading.className = 'loading';
             _this.insertBefore(loading, _this.firstChild);
+
+            // Move map
+            map.panTo(prefCapital);
 
             axios.get(prefFile).then(function(response) {
                 var forestLayer = L.geoJson(response.data).addTo(map);
