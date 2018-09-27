@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Map</title>
+    <title>国有林マップ</title>
+    <link rel="stylesheet" href="./assets/css/normalize.css" />
+    <link rel="stylesheet" href="./assets/js/drawer/dist/css/drawer.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+    <script src="./assets/js/jquery-3.3.1.min.js"></script>
+    <script src="./assets/js/iscroll/build/iscroll.js"></script>
+    <script src="./assets/js/drawer/dist/js/drawer.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-size: 100%;
+            line-height: 1.6;
+            font-family: sans-serif;
+        }
+
         html,
         body,
         .site-container {
@@ -27,47 +43,86 @@
         }
 
         .site-container {
-            display: flex;
+            padding-top: 60px;
+            /* display: flex; */
         }
 
-        header {
-            width: 250px;
-            background-color: #f6f6f6;
+        .header {
+            background-color: #fff;
             padding: 1em;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+            position: fixed;
+            z-index: 2;
+            width: 100%;
+            top: 0;
+            left: 0;
+            height: 60px;
+            padding-left: 60px;
         }
 
-        header ul {
+        .header-inner {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .header h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 100%;
+            font-weight: normal;
+            line-height: 1.4;
+        }
+
+        .header ul {
             list-style: none;
             margin: 0;
             padding: 0;
         }
 
-        header ul > li {
+        .header ul > li {
             margin: 0 0 0.5em;
         }
 
+        .drawer-nav {
+            /* padding: 1em; */
+            /* box-shadow: 0 0 3px rgba(0, 0, 0, 0.5); */
+        }
+
+        .drawer-nav > :first-child {
+            margin-top: 0;
+        }
+
+        .drawer-inner {
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+
         #map {
+            position: relative;
+            z-index: 0;
             height: 100%;
             flex: 1;
         }
 
-        button {
+        .button {
             display: block;
             width: 100%;
             border: 0;
             background-color: #663399;
             color: #fff;
             border-radius: 3px;
-            padding: .75em 1em;
+            padding: 1em 1em;
             font-size: 16px;
         }
 
-        button:focus,
-        button:hover {
+        .button:focus,
+        .button:hover {
             background-color: #4c2673;
         }
 
-        button[disabled] {
+        .button[disabled] {
             background-color: #eeeeee;
             color: #777777;
         }
@@ -77,8 +132,9 @@
         .loading:after {
             display: inline-block;
             border-radius: 50%;
-            width: 1em;
-            height: 1em;
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
         }
 
         .loading {
@@ -117,14 +173,67 @@
             }
         }
 
-        button[disabled] .loading {
+        .button[disabled] .loading {
             display: none;
         }
     </style>
 </head>
-<body>
+<body class="drawer drawer--left">
+
+    <div class="site-container">
+        <header class="header">
+            <div class="header-inner">
+                <h1>国有林マップ</h1>
+            </div>
+            <div>
+                <button type="button" class="drawer-toggle drawer-hamburger">
+                    <span class="sr-only">toggle navigation</span>
+                    <span class="drawer-hamburger-icon"></span>
+                </button>
+                <nav class="drawer-nav" role="navigation">
+                    <div class="drawer-inner">
+                        <p>各都道府県の国有林データをダウンロードします。通信量にご注意ください。</p>
+                        <section>
+                            <h3>北海道・東北地方</h3>
+                            <ul class="nav-menu">
+                                <li><button type="button" class="js-button button" data-prefcode="4">宮城県(20.6MB)</button></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>関東地方</h3>
+                            <ul class="nav-menu">
+                                <li><button type="button" class="js-button button" data-prefcode="13">東京都(1.1MB)</button></li>
+                                <li><button type="button" class="js-button button" data-prefcode="14">神奈川県(1.5MB)</button></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>中部地方</h3>
+                            <ul class="nav-menu">
+                                <li><button type="button" class="js-button button" data-prefcode="19">山梨県(894KB)</button></li>
+                                <li><button type="button" class="js-button button" data-prefcode="21">岐阜県(27.1MB)</button></li>
+                                <li><button type="button" class="js-button button" data-prefcode="23">愛知県(3.7MB)</button></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>近畿地方</h3>
+                            <ul class="nav-menu">
+                                <li><button type="button" class="js-button button" data-prefcode="24">三重県(6.5MB)</button></li>
+                            </ul>
+                        </section>
+                    </div>
+                </nav>
+            </div>
+        </header>
+        <main id="map"></main>
+    </div>
 
     <script>
+
+        $(document).ready(function() {
+            $('.drawer').drawer();
+        });
+
+
         var prefList = {
             "prefectures": [
                 { "code": 1, "alphabet": "hokkaido", "name": "北海道", "capital": [43.06417, 141.34694] },
@@ -176,27 +285,7 @@
                 { "code": 47, "alphabet": "okinawa", "name": "沖縄県", "capital": [26.2125,127.68111] }
             ]
         }
-    </script>
 
-    <div class="site-container">
-        <header class="header">
-            <div>
-                <p>各都道府県の国有林データをダウンロードします。通信量にご注意ください。</p>
-                <ul id="pref-list">
-                    <li><button type="button" class="js-button" data-prefcode="4">宮城県(20.6MB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="13">東京都(1.1MB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="14">神奈川県(1.5MB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="19">山梨県(894KB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="21">岐阜県(27.1MB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="23">愛知県(3.7MB)</button></li>
-                    <li><button type="button" class="js-button" data-prefcode="24">三重県(6.5MB)</button></li>
-                </ul>
-            </div>
-        </header>
-        <main id="map"></main>
-    </div>
-
-    <script>
 
         var map = L.map('map').setView([35.68944,139.69167], 13);
 
