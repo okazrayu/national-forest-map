@@ -1,53 +1,196 @@
 <!doctype html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
-        #map {
-            height: 100%;
-        }
-
         html,
-        body {
+        body,
+        .site-container {
             height: 100%;
             margin: 0;
             padding: 0;
         }
+
+        .leaflet-container {
+            background: #fff;
+        }
+
+        .leaflet-div-icon {
+            background: none;
+            white-space: nowrap;
+            border: none;
+        }
+
+        .site-container {
+            display: flex;
+        }
+
+        header {
+            width: 250px;
+            background-color: #f6f6f6;
+            padding: 1em;
+        }
+
+        header ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        header ul > li {
+            margin: 0 0 0.5em;
+        }
+
+        #map {
+            height: 100%;
+            flex: 1;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            border: 0;
+            background-color: #663399;
+            color: #fff;
+            border-radius: 3px;
+            padding: .75em 1em;
+            font-size: 16px;
+        }
+
+        button:focus,
+        button:hover {
+            background-color: #4c2673;
+        }
+
+        button[disabled] {
+            background-color: #eeeeee;
+            color: #777777;
+        }
     </style>
 </head>
-
-
 <body>
 
-    <div id="map"></div>
     <script>
-        var map;
-
-        function initMap() {
-            var map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 11,
-                // center: {
-                //     lat: 38.4061098,
-                //     lng: 140.8676238
-                // },
-                center:  new google.maps.LatLng(38.4061098, 140.8676238),
-            });
-
-            var ctaLayer = new google.maps.KmlLayer({
-                // url: 'https://okazrayu.github.io/national-forest-map/data/04-miyagi.kml',
-                url: 'https://okazrayu.github.io/national-forest-map/data/21-gifu.kml',
-                // url: 'https://okazrayu.github.io/national-forest-map/data/13-tokyo.kml',
-                // url: ['https://okazrayu.github.io/national-forest-map/data/13-tokyo.kml', 'https://okazrayu.github.io/national-forest-map/data/04-miyagi.kml'],
-                // url: ['https://okazrayu.github.io/national-forest-map/data/13-tokyo.kml', 'https://okazrayu.github.io/national-forest-map/data/04-miyagi.kml'],
-                map: map
-            });
+        var prefList = {
+            "prefectures": [
+                { "code": 1, "alphabet": "hokkaido", "name": "北海道", "capital": [43.06417, 141.34694] },
+                { "code": 2, "alphabet": "aomori", "name": "青森県", "capital": [40.82444, 140.74] },
+                { "code": 3, "alphabet": "iwate", "name": "岩手県", "capital": [39.70361,141.1525] },
+                { "code": 4, "alphabet": "miyagi", "name": "宮城県", "capital": [38.26889,140.87194] },
+                { "code": 5, "alphabet": "akita", "name": "秋田県", "capital": [39.71861,140.1025] },
+                { "code": 6, "alphabet": "yamagata", "name": "山形県", "capital": [38.24056,140.36333] },
+                { "code": 7, "alphabet": "fukushima", "name": "福島県", "capital": [37.75,140.46778] },
+                { "code": 8, "alphabet": "ibaraki", "name": "茨城県", "capital": [36.34139,140.44667] },
+                { "code": 9, "alphabet": "tochigi", "name": "栃木県", "capital": [36.56583,139.88361] },
+                { "code": 10, "alphabet": "gunma", "name": "群馬県", "capital": [36.39111,139.06083] },
+                { "code": 11, "alphabet": "saitama", "name": "埼玉県", "capital": [35.85694,139.64889] },
+                { "code": 12, "alphabet": "chiba", "name": "千葉県", "capital": [35.60472,140.12333] },
+                { "code": 13, "alphabet": "tokyo", "name": "東京都", "capital": [35.68944,139.69167] },
+                { "code": 14, "alphabet": "kanagawa", "name": "神奈川県", "capital": [35.44778,139.6425] },
+                { "code": 15, "alphabet": "niigata", "name": "新潟県", "capital": [37.90222,139.02361] },
+                { "code": 16, "alphabet": "toyama", "name": "富山県", "capital": [36.69528,137.21139] },
+                { "code": 17, "alphabet": "ishikawa", "name": "石川県", "capital": [36.59444,136.62556] },
+                { "code": 18, "alphabet": "fukui", "name": "福井県", "capital": [36.06528,136.22194] },
+                { "code": 19, "alphabet": "yamanashi", "name": "山梨県", "capital": [35.66389,138.56833] },
+                { "code": 20, "alphabet": "nagano", "name": "長野県", "capital": [36.65139,138.18111] },
+                { "code": 21, "alphabet": "gifu", "name": "岐阜県", "capital": [35.39111,136.72222] },
+                { "code": 22, "alphabet": "shizuoka", "name": "静岡県", "capital": [34.97694,138.38306] },
+                { "code": 23, "alphabet": "aichi", "name": "愛知県", "capital": [35.18028,136.90667] },
+                { "code": 24, "alphabet": "mie", "name": "三重県", "capital": [34.73028,136.50861] },
+                { "code": 25, "alphabet": "shiga", "name": "滋賀県", "capital": [35.00444,135.86833] },
+                { "code": 26, "alphabet": "kyoto", "name": "京都府", "capital": [35.02139,135.75556] },
+                { "code": 27, "alphabet": "osaka", "name": "大阪府", "capital": [34.68639,135.52] },
+                { "code": 28, "alphabet": "hyogo", "name": "兵庫県", "capital": [34.69139,135.18306] },
+                { "code": 29, "alphabet": "nara", "name": "奈良県", "capital": [34.68528,135.83278] },
+                { "code": 30, "alphabet": "wakayama", "name": "和歌山県", "capital": [34.22611,135.1675] },
+                { "code": 31, "alphabet": "tottori", "name": "鳥取県", "capital": [35.50361,134.23833] },
+                { "code": 32, "alphabet": "shimane", "name": "島根県", "capital": [35.47222,133.05056] },
+                { "code": 33, "alphabet": "okayama", "name": "岡山県", "capital": [34.66167,133.935] },
+                { "code": 34, "alphabet": "hiroshima", "name": "広島県", "capital": [34.39639,132.45944] },
+                { "code": 35, "alphabet": "yamaguchi", "name": "山口県", "capital": [34.18583,131.47139] },
+                { "code": 36, "alphabet": "tokushima", "name": "徳島県", "capital": [34.06583,134.55944] },
+                { "code": 37, "alphabet": "kagawa", "name": "香川県", "capital": [34.34028,134.04333] },
+                { "code": 38, "alphabet": "ehime", "name": "愛媛県", "capital": [33.84167,132.76611] },
+                { "code": 39, "alphabet": "kochi", "name": "高知県", "capital": [33.55972,133.53111] },
+                { "code": 40, "alphabet": "fukuoka", "name": "福岡県", "capital": [33.60639,130.41806] },
+                { "code": 41, "alphabet": "saga", "name": "佐賀県", "capital": [33.24944,130.29889] },
+                { "code": 42, "alphabet": "nagasaki", "name": "長崎県", "capital": [32.74472,129.87361] },
+                { "code": 43, "alphabet": "kumamoto", "name": "熊本県", "capital": [32.78972,130.74167] },
+                { "code": 44, "alphabet": "oita", "name": "大分県", "capital": [33.23806,131.6125] },
+                { "code": 45, "alphabet": "miyazaki", "name": "宮崎県", "capital": [31.91111,131.42389] },
+                { "code": 46, "alphabet": "kagoshima", "name": "鹿児島県", "capital": [31.56028,130.55806] },
+                { "code": 47, "alphabet": "okinawa", "name": "沖縄県", "capital": [26.2125,127.68111] }
+            ]
         }
     </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA5IBHZeuF3tXSB6Na3ooCWL8yg8LRre6Q&callback=initMap"></script>
+
+    <div class="site-container">
+        <header class="header">
+            <nav>
+                <ul id="pref-list">
+                    <li><button type="button" class="js-button" data-prefcode="4">宮城県</button></li>
+                    <li><button type="button" class="js-button" data-prefcode="13">東京都</button></li>
+                </ul>
+            </nav>
+        </header>
+        <main id="map"></main>
+    </div>
+
+    <script>
+
+        var map = L.map('map').setView([35.68944,139.69167], 13);
+
+        L.tileLayer(
+            'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+                attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル（標準地図）</a>",
+                maxNativeZoom: 18,
+                maxZoom: 18,
+                opacity: 1
+            }
+        ).addTo(map);
+
+
+        var buttons = document.querySelectorAll('.js-button');
+        for ( var i = 0, len = buttons.length; i < len; ++i ) {
+            buttons[i].dataset.num = i;
+            buttons[i].addEventListener("click", onButtonClick);
+        }
+
+        function onButtonClick() {
+            var _this = this;
+            var prefNumber = _this.getAttribute('data-prefcode');
+            var thisPref = prefList.prefectures[ prefNumber - 1 ];
+            var prefAlphabet = thisPref.alphabet;
+            var prefName = thisPref.name;
+            var prefCapital = thisPref.capital;
+            var prefFile = "./data/" + prefNumber + "-" + prefAlphabet + ".geojson";
+
+            console.log( prefFile );
+
+            axios.get(prefFile).then(function(response) {
+                var forestLayer = L.geoJson( response.data ).addTo(map);
+                var forestCheckbox = {
+                    [prefName] : forestLayer
+                };
+
+                _this.disabled = true;
+
+                // L.control.layers('', forestCheckbox, {
+                //     position: 'topright',
+                //     collapsed: false
+                // }).addTo(map);
+
+            }).catch(function(error) {
+                console.log('ERROR');
+            });
+        }
+
+    </script>
 
 </body>
-
 </html>
